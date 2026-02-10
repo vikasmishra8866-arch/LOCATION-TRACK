@@ -1,0 +1,12 @@
+streamlit
+h8mail
+requests
+aiohttp
+beautifulsoup4
+selenium
+webdriver-manager
+fpdf
+pandas
+folium
+streamlit-folium
+streamlit-autorefresh
