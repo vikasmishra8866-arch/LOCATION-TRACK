@@ -214,6 +214,19 @@ header {visibility:hidden;}
     border-top:1px solid rgba(255,255,255,0.05);
 }
 
+/* WEBSITE CUSTOM FOOTER */
+
+.website-footer {
+    text-align: center;
+    padding: 30px 10px;
+    color: #67e8f9;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    margin-top: 50px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
 </style>
 
 """, unsafe_allow_html=True)
@@ -467,7 +480,7 @@ if generate:
         </div>
 
         <div class="card-footer">
-            Vikas Mishra Private Suite
+            🔒 SECURE UPI GATEWAY
         </div>
 
     </div>
@@ -661,7 +674,7 @@ if generate:
         </div>
 
         <div class="card-footer">
-            Vikas Mishra Private Suite
+            🔒 SECURE UPI GATEWAY
         </div>
 
     </div>
@@ -704,3 +717,9 @@ if generate:
         download_html,
         height=90
     )
+
+# ================= WEBSITE CUSTOM FOOTER =================
+st.markdown(
+    '<div class="website-footer">Vikas Mishra Private Suite</div>',
+    unsafe_allow_html=True
+)
