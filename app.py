@@ -234,12 +234,12 @@ header {visibility:hidden;}
 # ================= TITLE =================
 
 st.markdown(
-    '<div class="main-title">UPI QR Generator By Vikas Mishra</div>',
+    '<div class="main-title">UPI QR Generator</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
-    '<div class="subtitle">Luxury Neon Payment Standee</div>',
+    '<div class="subtitle">MANAGED BY VIKAS MISHRA</div>',
     unsafe_allow_html=True
 )
 
