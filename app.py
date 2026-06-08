@@ -234,7 +234,7 @@ header {visibility:hidden;}
 # ================= TITLE =================
 
 st.markdown(
-    '<div class="main-title">Premium UPI QR Generator</div>',
+    '<div class="main-title">UPI QR Generator By Vikas Mishra</div>',
     unsafe_allow_html=True
 )
 
@@ -276,7 +276,7 @@ note = st.text_input(
     value="Payment"
 )
 
-generate = st.button("✨ Generate Premium QR")
+generate = st.button("✨ Generate QR")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -629,7 +629,7 @@ if generate:
     <body>
 
     <button class="download-btn" onclick="downloadCard()">
-    ⬇ Download Premium UPI Card
+    ⬇ Download UPI Card
     </button>
 
     <div class="hidden-card">
